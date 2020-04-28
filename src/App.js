@@ -12,7 +12,24 @@ class App extends React.Component {
                 { id: 1, name: 'Player 1', score: 0 },
                 { id: 2, name: 'Player 2', score: 0 },
             ],
+            allGames: [],
+            viewing: 'All',
+            isLoading: true,
         };
+    }
+
+    async componentDidMount() {
+        try {
+            const response = await fetch('https://pongboardapi.herokuapp.com/')
+            const responseJson = await response.json();
+
+            this.setState({
+                isLoading: false,
+                allGames: responseJson,
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     updateScore(playerId) {
@@ -27,15 +44,51 @@ class App extends React.Component {
             return { currentGame: updatedGame };
         });
     }
+
+    showCurrentGame() {
+        this.setState({
+            viewing: 'Current',
+        });
+    }
+
+    showAllGames() {
+        this.setState({
+            viewing: 'All',
+        });
+    }
     
     render() {
-        return (
-            <div>
-                <AppHeader />
+        let gameView;
+        if (this.state.viewing === 'Current') {
+            gameView = (
                 <Game
                     gameData={this.state.currentGame}
                     updateScore={playerId => this.updateScore(playerId)}
                 />
+            );
+        } else {
+            gameView = this.state.allGames.map(game => (
+                <Game
+                    key={game.id}
+                    gameData={game.players}
+                />
+            ));
+        } 
+
+        if (this.state.isLoading) {
+            return (
+                <p>Loading...</p>
+            );
+        }
+
+        return (
+            <div>
+                <AppHeader />
+                <div className="app-navigation">
+                    <button onClick={() => this.showAllGames()}>View Previous Games</button>
+                    <button onClick={() => this.showCurrentGame()}>View Current Game</button>
+                </div>
+                { gameView }
             </div>
         );
     }
